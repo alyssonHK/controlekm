@@ -1,0 +1,5 @@
+{
+  "name": "Controle de Viagens",
+  "description": "Um aplicativo para registrar e gerenciar informações de viagens de veículos, incluindo motorista, veículo, quilometragem e rota. Os dados podem ser facilmente copiados para a área de transferência.",
+  "requestFramePermissions": []
+}

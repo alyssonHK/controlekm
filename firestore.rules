@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permitir acesso total para desenvolvimento
+    // ATENÇÃO: Estas regras são apenas para desenvolvimento!
+    // Para produção, configure autenticação adequada
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+} 
