@@ -1,6 +1,6 @@
-# Controle de Viagens - Kalfritec
+# Controle de Viagens
 
-Sistema de controle de viagens por KM desenvolvido para a Kalfritec.
+Sistema de controle de viagens por KM.
 
 ## 🚀 Funcionalidades
 
