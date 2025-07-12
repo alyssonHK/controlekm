@@ -186,8 +186,16 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
     const driverMatch = !filters.driver || trip.driver === filters.driver;
     const vehicleMatch = !filters.vehicle || trip.vehicle === filters.vehicle;
     const plateMatch = !filters.plate || trip.plate === filters.plate;
-    const dateMatch = !filters.date || 
-      new Date(trip.departureTime).toLocaleDateString('pt-BR').includes(filters.date);
+    
+    let dateMatch = true;
+    if (filters.date) {
+      const filterDate = new Date(filters.date);
+      const tripDate = new Date(trip.departureTime);
+      // Compara apenas a data (ano, mês, dia), ignorando hora
+      dateMatch = filterDate.getFullYear() === tripDate.getFullYear() &&
+                  filterDate.getMonth() === tripDate.getMonth() &&
+                  filterDate.getDate() === tripDate.getDate();
+    }
 
     return driverMatch && vehicleMatch && plateMatch && dateMatch;
   });
@@ -443,12 +451,11 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
                     Data
                   </label>
                   <input
-                    type="text"
+                    type="datetime-local"
                     id="filter-date"
                     value={filters.date}
                     onChange={(e) => handleFilterChange('date', e.target.value)}
-                    placeholder="DD/MM/AAAA"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:[color-scheme:light]"
                   />
                 </div>
               </div>
