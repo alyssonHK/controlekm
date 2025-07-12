@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { collection, getDocs, addDoc, deleteDoc, doc, getFirestore, updateDoc } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -15,3 +15,26 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+
+export const fetchChecklistModel = async () => {
+  const db = getFirestore();
+  const querySnapshot = await getDocs(collection(db, 'checklistModel'));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const addChecklistModelItem = async (text: string) => {
+  const db = getFirestore();
+  const docRef = await addDoc(collection(db, 'checklistModel'), { text });
+  return { id: docRef.id, text };
+};
+
+export const removeChecklistModelItem = async (id: string) => {
+  const db = getFirestore();
+  await deleteDoc(doc(db, 'checklistModel', id));
+};
+
+export const updateChecklistModelItem = async (id: string, text: string) => {
+  const db = getFirestore();
+  const ref = doc(db, 'checklistModel', id);
+  await updateDoc(ref, { text });
+};

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Trip, Driver, Vehicle, Plate, ChecklistItem } from '../types';
 import { PlusIcon, TrashIcon, ChecklistIcon, PencilIcon } from './icons';
+import { fetchChecklistModel, addChecklistModelItem, removeChecklistModelItem, updateChecklistModelItem } from '../firebase';
 
 // Função utilitária para formatar placas
 const formatPlate = (value: string): string => {
@@ -326,6 +327,27 @@ export const TripForm: React.FC<TripFormProps> = ({
   const [isPlateModalOpen, setIsPlateModalOpen] = useState(false);
   const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
   const [isEditingChecklist, setIsEditingChecklist] = useState(false);
+  // Substituir o estado do modelo de checklist por um estado sincronizado com o Firestore
+  const [checklistModel, setChecklistModel] = useState<ChecklistItem[]>([]);
+  const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
+  const [editingChecklistText, setEditingChecklistText] = useState<string>('');
+
+  // Buscar modelo do Firestore ao abrir o modal de checklist ou ao montar o componente
+  useEffect(() => {
+    const loadChecklistModel = async () => {
+      const items = await fetchChecklistModel();
+      setChecklistModel(items.map((item: any) => ({ id: item.id, text: item.text, checked: false })));
+    };
+    loadChecklistModel();
+  }, []);
+
+  // Sempre que abrir o modal de checklist, resetar os itens para o modelo online
+  useEffect(() => {
+    if (isChecklistModalOpen) {
+      setChecklistItems(checklistModel.map(item => ({ ...item, checked: false })));
+    }
+  }, [isChecklistModalOpen, checklistModel]);
+
   // Função para carregar checklist do localStorage
   const loadChecklistFromStorage = (): ChecklistItem[] => {
     try {
@@ -416,24 +438,39 @@ export const TripForm: React.FC<TripFormProps> = ({
     );
   };
 
-  const addChecklistItem = () => {
+  // Adicionar item ao modelo online
+  const addChecklistItem = async () => {
     if (newChecklistItem.trim()) {
-      const newItem: ChecklistItem = {
-        id: Date.now().toString(),
-        text: newChecklistItem.trim(),
-        checked: false
-      };
-      const updatedItems = [...checklistItems, newItem];
-      setChecklistItems(updatedItems);
-      saveChecklistToStorage(updatedItems);
+      const added = await addChecklistModelItem(newChecklistItem.trim());
+      setChecklistModel(prev => [...prev, { id: added.id, text: added.text, checked: false }]);
       setNewChecklistItem('');
     }
   };
 
-  const removeChecklistItem = (id: string) => {
-    const updatedItems = checklistItems.filter(item => item.id !== id);
-    setChecklistItems(updatedItems);
-    saveChecklistToStorage(updatedItems);
+  // Remover item do modelo online
+  const removeChecklistItem = async (id: string) => {
+    await removeChecklistModelItem(id);
+    setChecklistModel(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Função para iniciar edição
+  const startEditChecklistItem = (id: string, text: string) => {
+    setEditingChecklistId(id);
+    setEditingChecklistText(text);
+  };
+
+  // Função para salvar edição
+  const saveEditChecklistItem = async (id: string) => {
+    await updateChecklistModelItem(id, editingChecklistText);
+    setChecklistModel(prev => prev.map(item => item.id === id ? { ...item, text: editingChecklistText } : item));
+    setEditingChecklistId(null);
+    setEditingChecklistText('');
+  };
+
+  // Função para cancelar edição
+  const cancelEditChecklistItem = () => {
+    setEditingChecklistId(null);
+    setEditingChecklistText('');
   };
 
   const markAllChecklist = () => {
@@ -546,9 +583,32 @@ export const TripForm: React.FC<TripFormProps> = ({
                         onChange={(e) => handleChecklistChange(item.id, e.target.checked)}
                         className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                       />
-                      <label htmlFor={`checklist-${item.id}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                        {item.text}
-                      </label>
+                      {editingChecklistId === item.id ? (
+                        <>
+                          <input
+                            type="text"
+                            value={editingChecklistText}
+                            onChange={e => setEditingChecklistText(e.target.value)}
+                            className="border rounded px-1 py-0.5 text-sm"
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') saveEditChecklistItem(item.id);
+                              if (e.key === 'Escape') cancelEditChecklistItem();
+                            }}
+                            autoFocus
+                          />
+                          <button onClick={() => saveEditChecklistItem(item.id)} className="ml-1 text-green-600">Salvar</button>
+                          <button onClick={cancelEditChecklistItem} className="ml-1 text-gray-500">Cancelar</button>
+                        </>
+                      ) : (
+                        <>
+                          <span>{item.text}</span>
+                          {isEditingChecklist && (
+                            <button onClick={() => startEditChecklistItem(item.id, item.text)} className="ml-2 text-blue-600" aria-label="Editar item do checklist">
+                              <PencilIcon className="w-4 h-4 inline" />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                     {isEditingChecklist && (
                       <button
