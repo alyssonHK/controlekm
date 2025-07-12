@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Trip } from '../types';
 import { ClipboardIcon, CheckIcon, WhatsAppIcon, FilterIcon, ChecklistIcon, TrashIcon, ExportIcon } from './icons';
+import * as XLSX from 'xlsx';
 
 interface TripTableProps {
   trips: Trip[];
@@ -183,20 +184,28 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
   };
 
   const exportToExcel = () => {
-    // Cabeçalhos das colunas
-    const headers = [
+    // Cabeçalhos fixos
+    const fixedHeaders = [
       'Motorista',
-      'Veículo', 
+      'Veículo',
       'Placa',
       'KM',
       'Origem',
       'Destino',
-      'Data/Hora Saída',
-      'Checklist Items',
-      'Checklist Status'
+      'Data/Hora Saída'
     ];
 
-    // Preparar dados para exportação usando os dados filtrados
+    // Descobrir todos os textos de checklist únicos nas viagens filtradas
+    const checklistSet = new Set<string>();
+    filteredTrips.forEach(trip => {
+      trip.checklist?.forEach(item => checklistSet.add(item.text));
+    });
+    const checklistHeaders = Array.from(checklistSet);
+
+    // Cabeçalhos finais
+    const headers = [...fixedHeaders, ...checklistHeaders];
+
+    // Montar os dados
     const data = filteredTrips.map(trip => {
       const departureDate = new Date(trip.departureTime);
       const formattedDate = departureDate.toLocaleString('pt-BR', {
@@ -206,52 +215,50 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
         hour: '2-digit',
         minute: '2-digit',
       });
-
-      // Preparar checklist
-      const checklistItems = trip.checklist ? trip.checklist.map(item => item.text).join('; ') : '';
-      const checklistStatus = trip.checklist ? trip.checklist.map(item => `${item.text}: ${item.checked ? 'Concluído' : 'Pendente'}`).join('; ') : '';
-
-      return [
-        trip.driver,
-        trip.vehicle,
-        trip.plate,
-        trip.km,
-        trip.origin,
-        trip.destination,
-        formattedDate,
-        checklistItems,
-        checklistStatus
-      ];
+      // Mapeia checklist para lookup
+      const checklistMap: Record<string, boolean> = {};
+      trip.checklist?.forEach(item => {
+        checklistMap[item.text] = item.checked;
+      });
+      // Monta objeto final
+      const row: Record<string, string | number> = {
+        'Motorista': trip.driver,
+        'Veículo': trip.vehicle,
+        'Placa': trip.plate,
+        'KM': trip.km,
+        'Origem': trip.origin,
+        'Destino': trip.destination,
+        'Data/Hora Saída': formattedDate
+      };
+      checklistHeaders.forEach(header => {
+        if (header in checklistMap) {
+          row[header] = checklistMap[header] ? 'OK' : 'NÃO OK';
+        } else {
+          row[header] = '';
+        }
+      });
+      return row;
     });
 
-    // Criar conteúdo CSV
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+    // Cria a planilha
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Viagens');
 
-    // Criar nome do arquivo baseado nos filtros aplicados
+    // Gera o nome do arquivo
     let fileName = 'viagens';
     if (hasActiveFilters) {
       const filterParts = [];
-      if (filters.driver) filterParts.push(`motorista_${filters.driver}`);
-      if (filters.vehicle) filterParts.push(`veiculo_${filters.vehicle}`);
-      if (filters.plate) filterParts.push(`placa_${filters.plate}`);
-      if (filters.date) filterParts.push(`data_${filters.date}`);
+      if (filters.driver) filterParts.push(`motorista_${filters.driver.replace(/[^a-zA-Z0-9]/g, '_')}`);
+      if (filters.vehicle) filterParts.push(`veiculo_${filters.vehicle.replace(/[^a-zA-Z0-9]/g, '_')}`);
+      if (filters.plate) filterParts.push(`placa_${filters.plate.replace(/[^a-zA-Z0-9]/g, '_')}`);
+      if (filters.date) filterParts.push(`data_${filters.date.replace(/[^a-zA-Z0-9]/g, '_')}`);
       fileName += `_filtrado_${filterParts.join('_')}`;
     }
-    fileName += `_${new Date().toISOString().split('T')[0]}.csv`;
+    fileName += `_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-    // Criar e baixar arquivo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Salva o arquivo
+    XLSX.writeFile(workbook, fileName);
   };
 
   const filteredTrips = trips.filter(trip => {
