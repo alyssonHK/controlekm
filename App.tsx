@@ -59,7 +59,7 @@ function App() {
             : String(new Date()); // Fallback to string conversion of current date
 
         // Explicitly map properties to avoid circular structure errors from Firestore objects.
-        return {
+        const trip = {
           id: doc.id,
           driver: data.driver || '',
           vehicle: data.vehicle || '',
@@ -68,7 +68,14 @@ function App() {
           origin: data.origin || '',
           destination: data.destination || '',
           departureTime: departureTimeISO,
+          checklist: data.checklist || [],
         } as Trip;
+        
+        if (trip.checklist && trip.checklist.length > 0) {
+          console.log('Trip with checklist loaded:', trip.id, trip.checklist);
+        }
+        
+        return trip;
       });
       setTrips(tripsData);
     });
@@ -83,6 +90,7 @@ function App() {
 
   const handleAddTrip = useCallback(async (tripData: Omit<Trip, 'id'>) => {
     try {
+      console.log('Saving trip with checklist:', tripData);
       await addDoc(collection(db, 'trips'), {
         ...tripData,
         departureTime: new Date(tripData.departureTime),
@@ -90,6 +98,15 @@ function App() {
     } catch (e) {
       console.error("Error adding trip: ", e);
       alert('Falha ao adicionar viagem.');
+    }
+  }, []);
+
+  const handleDeleteTrip = useCallback(async (tripId: string) => {
+    try {
+      await deleteDoc(doc(db, 'trips', tripId));
+    } catch (e) {
+      console.error("Error deleting trip: ", e);
+      alert('Falha ao excluir viagem.');
     }
   }, []);
 
@@ -204,7 +221,7 @@ function App() {
           onAddPlate={handleAddPlate}
           onRemovePlate={handleRemovePlate}
         />
-        <TripTable trips={trips} />
+        <TripTable trips={trips} drivers={drivers} vehicles={vehicles} plates={plates} onDeleteTrip={handleDeleteTrip} />
       </main>
 
       <footer className="text-center mt-12 py-4">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { Trip, Driver, Vehicle, Plate } from '../types';
-import { PlusIcon, TrashIcon } from './icons';
+import type { Trip, Driver, Vehicle, Plate, ChecklistItem } from '../types';
+import { PlusIcon, TrashIcon, ChecklistIcon, PencilIcon } from './icons';
 
 // Função utilitária para formatar placas
 const formatPlate = (value: string): string => {
@@ -241,6 +241,18 @@ export const TripForm: React.FC<TripFormProps> = ({
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isPlateModalOpen, setIsPlateModalOpen] = useState(false);
+  const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
+  const [isEditingChecklist, setIsEditingChecklist] = useState(false);
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
+    { id: '1', text: 'Verificar combustível', checked: false },
+    { id: '2', text: 'Verificar pneus', checked: false },
+    { id: '3', text: 'Verificar óleo', checked: false },
+    { id: '4', text: 'Documentos do veículo', checked: false },
+    { id: '5', text: 'CNH do motorista', checked: false },
+    { id: '6', text: 'Rota planejada', checked: false },
+    { id: '7', text: 'Meios de comunicação', checked: false },
+  ]);
+  const [newChecklistItem, setNewChecklistItem] = useState('');
 
   useEffect(() => {
     const driverExists = drivers.some(d => d.name === formData.driver);
@@ -309,6 +321,34 @@ export const TripForm: React.FC<TripFormProps> = ({
     }
   };
 
+  const handleChecklistChange = (id: string, checked: boolean) => {
+    setChecklistItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, checked } : item
+      )
+    );
+  };
+
+  const addChecklistItem = () => {
+    if (newChecklistItem.trim()) {
+      const newItem: ChecklistItem = {
+        id: Date.now().toString(),
+        text: newChecklistItem.trim(),
+        checked: false
+      };
+      setChecklistItems(prev => [...prev, newItem]);
+      setNewChecklistItem('');
+    }
+  };
+
+  const removeChecklistItem = (id: string) => {
+    setChecklistItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const markAllChecklist = () => {
+    setChecklistItems(prev => prev.map(item => ({ ...item, checked: true })));
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.driver) {
@@ -326,6 +366,7 @@ export const TripForm: React.FC<TripFormProps> = ({
     onAddTrip({
       ...formData,
       km: Number(formData.km),
+      checklist: checklistItems,
     });
     setFormData(prev => ({
       ...prev,
@@ -336,6 +377,8 @@ export const TripForm: React.FC<TripFormProps> = ({
       destination: '',
       departureTime: getInitialDateTime(),
     }));
+    // Reset checklist
+    setChecklistItems(prev => prev.map(item => ({ ...item, checked: false })));
   };
 
   return (
@@ -343,6 +386,93 @@ export const TripForm: React.FC<TripFormProps> = ({
       <AddDriverModal isOpen={isDriverModalOpen} onClose={() => setIsDriverModalOpen(false)} onAddDriver={onAddDriver} />
       <AddVehicleModal isOpen={isVehicleModalOpen} onClose={() => setIsVehicleModalOpen(false)} onAddVehicle={onAddVehicle} />
       <AddPlateModal isOpen={isPlateModalOpen} onClose={() => setIsPlateModalOpen(false)} onAddPlate={onAddPlate} />
+      
+      {/* Modal de Checklist */}
+      {isChecklistModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 w-80 max-h-96 overflow-y-auto">
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Checklist de Viagem</h4>
+                <button
+                  onClick={() => setIsEditingChecklist(!isEditingChecklist)}
+                  className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  aria-label="Editar checklist"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {isEditingChecklist && (
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newChecklistItem}
+                      onChange={(e) => setNewChecklistItem(e.target.value)}
+                      placeholder="Adicionar novo item..."
+                      className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      onKeyPress={(e) => e.key === 'Enter' && addChecklistItem()}
+                    />
+                    <button
+                      onClick={addChecklistItem}
+                      className="px-2 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-3">
+                {checklistItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`checklist-${item.id}`}
+                        checked={item.checked}
+                        onChange={(e) => handleChecklistChange(item.id, e.target.checked)}
+                        className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label htmlFor={`checklist-${item.id}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                        {item.text}
+                      </label>
+                    </div>
+                    {isEditingChecklist && (
+                      <button
+                        onClick={() => removeChecklistItem(item.id)}
+                        className="p-1 text-red-500 hover:text-red-700"
+                        aria-label="Remover item"
+                      >
+                        <TrashIcon className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-4 flex justify-between">
+                <button
+                  onClick={() => setIsChecklistModalOpen(false)}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                >
+                  Fechar
+                </button>
+                <button
+                  onClick={() => {
+                    setIsChecklistModalOpen(false);
+                    // O checklist será salvo automaticamente quando a viagem for adicionada
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                >
+                  Salvar Checklist
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
         {/* <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Registrar Nova Viagem</h2> */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -420,9 +550,19 @@ export const TripForm: React.FC<TripFormProps> = ({
               </div>
           </div>
 
-          <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 transition-colors">
-            Adicionar Viagem
-          </button>
+          <div className="flex gap-2">
+            <button type="submit" className="flex-1 text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 transition-colors">
+              Adicionar Viagem
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setIsChecklistModalOpen(true)}
+              className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" 
+              aria-label="Abrir checklist"
+            >
+              <ChecklistIcon className="w-5 h-5"/>
+            </button>
+          </div>
         </form>
       </div>
     </>

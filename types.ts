@@ -13,6 +13,12 @@ export interface Plate {
   number: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  checked: boolean;
+}
+
 export interface Trip {
   id: string;
   driver: string;
@@ -22,4 +28,5 @@ export interface Trip {
   origin: string;
   destination: string;
   departureTime: string;
+  checklist?: ChecklistItem[];
 }
