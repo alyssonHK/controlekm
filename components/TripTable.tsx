@@ -451,7 +451,7 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
                     Data
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     id="filter-date"
                     value={filters.date}
                     onChange={(e) => handleFilterChange('date', e.target.value)}
