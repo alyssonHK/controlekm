@@ -16,7 +16,9 @@ const AddDriverModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onAddDriver: (name: string) => Promise<boolean>;
-}> = ({ isOpen, onClose, onAddDriver }) => {
+  drivers: Driver[];
+  onRemoveDriver: (id: string) => void;
+}> = ({ isOpen, onClose, onAddDriver, drivers, onRemoveDriver }) => {
   const [newDriverName, setNewDriverName] = useState('');
 
   const handleAdd = async () => {
@@ -24,7 +26,6 @@ const AddDriverModal: React.FC<{
       const success = await onAddDriver(newDriverName.trim());
       if (success) {
         setNewDriverName('');
-        onClose();
       }
     }
   };
@@ -34,35 +35,62 @@ const AddDriverModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Adicionar Novo Motorista</h3>
-        <div>
-          <label htmlFor="modal-new-driver" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-            Nome do Motorista
-          </label>
-          <input
-            type="text"
-            id="modal-new-driver"
-            value={newDriverName}
-            onChange={(e) => setNewDriverName(e.target.value)}
-            placeholder="Nome completo"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-            autoFocus
-          />
+        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Gerenciar Motoristas</h3>
+        
+        {/* Lista de motoristas existentes */}
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Motoristas Cadastrados</h4>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {drivers.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum motorista cadastrado</p>
+            ) : (
+              drivers.map(driver => (
+                <div key={driver.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                  <span className="text-sm text-gray-900 dark:text-white">{driver.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveDriver(driver.id)}
+                    className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    aria-label="Remover motorista"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <div className="mt-6 flex justify-end gap-3">
+
+        {/* Adicionar novo motorista */}
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Adicionar Novo Motorista</h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newDriverName}
+              onChange={(e) => setNewDriverName(e.target.value)}
+              placeholder="Nome completo"
+              className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+              onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!newDriverName.trim()}
+              className="px-3 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={onClose}
             className="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
           >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="py-2 px-4 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800"
-          >
-            Adicionar
+            Fechar
           </button>
         </div>
       </div>
@@ -74,7 +102,9 @@ const AddVehicleModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onAddVehicle: (name: string) => Promise<boolean>;
-}> = ({ isOpen, onClose, onAddVehicle }) => {
+  vehicles: Vehicle[];
+  onRemoveVehicle: (id: string) => void;
+}> = ({ isOpen, onClose, onAddVehicle, vehicles, onRemoveVehicle }) => {
   const [newVehicleName, setNewVehicleName] = useState('');
 
   const handleAdd = async () => {
@@ -82,7 +112,6 @@ const AddVehicleModal: React.FC<{
       const success = await onAddVehicle(newVehicleName.trim());
       if (success) {
         setNewVehicleName('');
-        onClose();
       }
     }
   };
@@ -92,35 +121,62 @@ const AddVehicleModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Adicionar Novo Veículo</h3>
-        <div>
-          <label htmlFor="modal-new-vehicle" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-            Nome do Veículo
-          </label>
-          <input
-            type="text"
-            id="modal-new-vehicle"
-            value={newVehicleName}
-            onChange={(e) => setNewVehicleName(e.target.value)}
-            placeholder="Nome do veículo"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-            autoFocus
-          />
+        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Gerenciar Veículos</h3>
+        
+        {/* Lista de veículos existentes */}
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Veículos Cadastrados</h4>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {vehicles.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum veículo cadastrado</p>
+            ) : (
+              vehicles.map(vehicle => (
+                <div key={vehicle.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                  <span className="text-sm text-gray-900 dark:text-white">{vehicle.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveVehicle(vehicle.id)}
+                    className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    aria-label="Remover veículo"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <div className="mt-6 flex justify-end gap-3">
+
+        {/* Adicionar novo veículo */}
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Adicionar Novo Veículo</h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newVehicleName}
+              onChange={(e) => setNewVehicleName(e.target.value)}
+              placeholder="Nome do veículo"
+              className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+              onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!newVehicleName.trim()}
+              className="px-3 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={onClose}
             className="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
           >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="py-2 px-4 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800"
-          >
-            Adicionar
+            Fechar
           </button>
         </div>
       </div>
@@ -132,7 +188,9 @@ const AddPlateModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onAddPlate: (number: string) => Promise<boolean>;
-}> = ({ isOpen, onClose, onAddPlate }) => {
+  plates: Plate[];
+  onRemovePlate: (id: string) => void;
+}> = ({ isOpen, onClose, onAddPlate, plates, onRemovePlate }) => {
   const [newPlateNumber, setNewPlateNumber] = useState('');
 
   const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +204,6 @@ const AddPlateModal: React.FC<{
       const success = await onAddPlate(newPlateNumber.trim());
       if (success) {
         setNewPlateNumber('');
-        onClose();
       }
     } else {
       alert('A placa deve ter exatamente 7 caracteres (3 letras + 4 números).');
@@ -158,37 +215,63 @@ const AddPlateModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Adicionar Nova Placa</h3>
-        <div>
-          <label htmlFor="modal-new-plate" className="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-            Número da Placa
-          </label>
-          <input
-            type="text"
-            id="modal-new-plate"
-            value={newPlateNumber}
-            onChange={handlePlateChange}
-            placeholder="ABC-1234 (7 caracteres)"
-            maxLength={8}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-            autoFocus
-          />
+        <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Gerenciar Placas</h3>
+        
+        {/* Lista de placas existentes */}
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Placas Cadastradas</h4>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {plates.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma placa cadastrada</p>
+            ) : (
+              plates.map(plate => (
+                <div key={plate.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                  <span className="text-sm text-gray-900 dark:text-white">{plate.number}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemovePlate(plate.id)}
+                    className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    aria-label="Remover placa"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <div className="mt-6 flex justify-end gap-3">
+
+        {/* Adicionar nova placa */}
+        <div className="border-t pt-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Adicionar Nova Placa</h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newPlateNumber}
+              onChange={handlePlateChange}
+              placeholder="ABC-1234 (7 caracteres)"
+              maxLength={8}
+              className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+              onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={newPlateNumber.replace(/[^a-zA-Z0-9]/g, '').length !== 7}
+              className="px-3 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={onClose}
             className="py-2 px-4 text-sm font-medium text-gray-900 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
           >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={newPlateNumber.replace(/[^a-zA-Z0-9]/g, '').length !== 7}
-            className="py-2 px-4 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Adicionar
+            Fechar
           </button>
         </div>
       </div>
@@ -294,32 +377,7 @@ export const TripForm: React.FC<TripFormProps> = ({
     }
   };
   
-  const handleRemoveDriver = () => {
-    if (formData.driver) {
-      const driverToRemove = drivers.find(d => d.name === formData.driver);
-      if (driverToRemove) {
-        onRemoveDriver(driverToRemove.id);
-      }
-    }
-  };
 
-  const handleRemoveVehicle = () => {
-    if (formData.vehicle) {
-      const vehicleToRemove = vehicles.find(v => v.name === formData.vehicle);
-      if (vehicleToRemove) {
-        onRemoveVehicle(vehicleToRemove.id);
-      }
-    }
-  };
-
-  const handleRemovePlate = () => {
-    if (formData.plate) {
-      const plateToRemove = plates.find(p => p.number === formData.plate);
-      if (plateToRemove) {
-        onRemovePlate(plateToRemove.id);
-      }
-    }
-  };
 
   const handleChecklistChange = (id: string, checked: boolean) => {
     setChecklistItems(prev => 
@@ -383,9 +441,27 @@ export const TripForm: React.FC<TripFormProps> = ({
 
   return (
     <>
-      <AddDriverModal isOpen={isDriverModalOpen} onClose={() => setIsDriverModalOpen(false)} onAddDriver={onAddDriver} />
-      <AddVehicleModal isOpen={isVehicleModalOpen} onClose={() => setIsVehicleModalOpen(false)} onAddVehicle={onAddVehicle} />
-      <AddPlateModal isOpen={isPlateModalOpen} onClose={() => setIsPlateModalOpen(false)} onAddPlate={onAddPlate} />
+      <AddDriverModal 
+        isOpen={isDriverModalOpen} 
+        onClose={() => setIsDriverModalOpen(false)} 
+        onAddDriver={onAddDriver}
+        drivers={drivers}
+        onRemoveDriver={onRemoveDriver}
+      />
+      <AddVehicleModal 
+        isOpen={isVehicleModalOpen} 
+        onClose={() => setIsVehicleModalOpen(false)} 
+        onAddVehicle={onAddVehicle}
+        vehicles={vehicles}
+        onRemoveVehicle={onRemoveVehicle}
+      />
+      <AddPlateModal 
+        isOpen={isPlateModalOpen} 
+        onClose={() => setIsPlateModalOpen(false)} 
+        onAddPlate={onAddPlate}
+        plates={plates}
+        onRemovePlate={onRemovePlate}
+      />
       
       {/* Modal de Checklist */}
       {isChecklistModalOpen && (
@@ -483,11 +559,8 @@ export const TripForm: React.FC<TripFormProps> = ({
                       {drivers.length === 0 && <option value="" disabled>Adicione um motorista...</option>}
                       {drivers.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
                   </select>
-                  <button type="button" onClick={() => setIsDriverModalOpen(true)} className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" aria-label="Adicionar motorista">
+                  <button type="button" onClick={() => setIsDriverModalOpen(true)} className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" aria-label="Gerenciar motoristas">
                       <PlusIcon className="w-5 h-5"/>
-                  </button>
-                  <button type="button" onClick={handleRemoveDriver} className="p-2.5 text-red-600 bg-red-100 dark:bg-red-900 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors flex-shrink-0" aria-label="Remover motorista">
-                      <TrashIcon className="w-5 h-5"/>
                   </button>
               </div>
           </div>
@@ -500,11 +573,8 @@ export const TripForm: React.FC<TripFormProps> = ({
                         {vehicles.length === 0 && <option value="" disabled>Adicione um veículo...</option>}
                         {vehicles.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
                     </select>
-                    <button type="button" onClick={() => setIsVehicleModalOpen(true)} className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" aria-label="Adicionar veículo">
+                    <button type="button" onClick={() => setIsVehicleModalOpen(true)} className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" aria-label="Gerenciar veículos">
                         <PlusIcon className="w-5 h-5"/>
-                    </button>
-                    <button type="button" onClick={handleRemoveVehicle} className="p-2.5 text-red-600 bg-red-100 dark:bg-red-900 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors flex-shrink-0" aria-label="Remover veículo">
-                        <TrashIcon className="w-5 h-5"/>
                     </button>
                 </div>
               </div>
@@ -515,11 +585,8 @@ export const TripForm: React.FC<TripFormProps> = ({
                         {plates.length === 0 && <option value="" disabled>Adicione uma placa...</option>}
                         {plates.map(p => <option key={p.id} value={p.number}>{p.number}</option>)}
                     </select>
-                    <button type="button" onClick={() => setIsPlateModalOpen(true)} className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" aria-label="Adicionar placa">
+                    <button type="button" onClick={() => setIsPlateModalOpen(true)} className="p-2.5 text-primary-600 bg-primary-100 dark:bg-primary-900 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors flex-shrink-0" aria-label="Gerenciar placas">
                         <PlusIcon className="w-5 h-5"/>
-                    </button>
-                    <button type="button" onClick={handleRemovePlate} className="p-2.5 text-red-600 bg-red-100 dark:bg-red-900 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors flex-shrink-0" aria-label="Remover placa">
-                        <TrashIcon className="w-5 h-5"/>
                     </button>
                 </div>
               </div>
