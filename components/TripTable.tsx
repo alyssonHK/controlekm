@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Trip } from '../types';
-import { ClipboardIcon, CheckIcon, WhatsAppIcon, FilterIcon, ChecklistIcon, TrashIcon } from './icons';
+import { ClipboardIcon, CheckIcon, WhatsAppIcon, FilterIcon, ChecklistIcon, TrashIcon, ExportIcon } from './icons';
 
 interface TripTableProps {
   trips: Trip[];
@@ -182,6 +182,78 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
     });
   };
 
+  const exportToExcel = () => {
+    // Cabeçalhos das colunas
+    const headers = [
+      'Motorista',
+      'Veículo', 
+      'Placa',
+      'KM',
+      'Origem',
+      'Destino',
+      'Data/Hora Saída',
+      'Checklist Items',
+      'Checklist Status'
+    ];
+
+    // Preparar dados para exportação usando os dados filtrados
+    const data = filteredTrips.map(trip => {
+      const departureDate = new Date(trip.departureTime);
+      const formattedDate = departureDate.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Preparar checklist
+      const checklistItems = trip.checklist ? trip.checklist.map(item => item.text).join('; ') : '';
+      const checklistStatus = trip.checklist ? trip.checklist.map(item => `${item.text}: ${item.checked ? 'Concluído' : 'Pendente'}`).join('; ') : '';
+
+      return [
+        trip.driver,
+        trip.vehicle,
+        trip.plate,
+        trip.km,
+        trip.origin,
+        trip.destination,
+        formattedDate,
+        checklistItems,
+        checklistStatus
+      ];
+    });
+
+    // Criar conteúdo CSV
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Criar nome do arquivo baseado nos filtros aplicados
+    let fileName = 'viagens';
+    if (hasActiveFilters) {
+      const filterParts = [];
+      if (filters.driver) filterParts.push(`motorista_${filters.driver}`);
+      if (filters.vehicle) filterParts.push(`veiculo_${filters.vehicle}`);
+      if (filters.plate) filterParts.push(`placa_${filters.plate}`);
+      if (filters.date) filterParts.push(`data_${filters.date}`);
+      fileName += `_filtrado_${filterParts.join('_')}`;
+    }
+    fileName += `_${new Date().toISOString().split('T')[0]}.csv`;
+
+    // Criar e baixar arquivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredTrips = trips.filter(trip => {
     const driverMatch = !filters.driver || trip.driver === filters.driver;
     const vehicleMatch = !filters.vehicle || trip.vehicle === filters.vehicle;
@@ -276,7 +348,14 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             Viagens {hasActiveFilters && `(${filteredTrips.length} de ${trips.length})`}
           </h3>
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportToExcel}
+              className="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 rounded-md transition-colors"
+              aria-label="Exportar viagens"
+            >
+              <ExportIcon className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`p-2 rounded-md transition-colors ${
@@ -288,8 +367,6 @@ export const TripTable: React.FC<TripTableProps> = ({ trips, drivers, vehicles, 
             >
               <FilterIcon className="w-5 h-5" />
             </button>
-            
-
           </div>
         </div>
 

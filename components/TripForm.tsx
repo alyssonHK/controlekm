@@ -326,16 +326,45 @@ export const TripForm: React.FC<TripFormProps> = ({
   const [isPlateModalOpen, setIsPlateModalOpen] = useState(false);
   const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
   const [isEditingChecklist, setIsEditingChecklist] = useState(false);
-  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
-    { id: '1', text: 'Verificar combustível', checked: false },
-    { id: '2', text: 'Verificar pneus', checked: false },
-    { id: '3', text: 'Verificar óleo', checked: false },
-    { id: '4', text: 'Documentos do veículo', checked: false },
-    { id: '5', text: 'CNH do motorista', checked: false },
-    { id: '6', text: 'Rota planejada', checked: false },
-    { id: '7', text: 'Meios de comunicação', checked: false },
-  ]);
+  // Função para carregar checklist do localStorage
+  const loadChecklistFromStorage = (): ChecklistItem[] => {
+    try {
+      const saved = localStorage.getItem('tripChecklist');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar checklist:', error);
+    }
+    // Checklist padrão se não houver dados salvos
+    return [
+      { id: '1', text: 'Verificar combustível', checked: false },
+      { id: '2', text: 'Verificar pneus', checked: false },
+      { id: '3', text: 'Verificar óleo', checked: false },
+      { id: '4', text: 'Documentos do veículo', checked: false },
+      { id: '5', text: 'CNH do motorista', checked: false },
+      { id: '6', text: 'Rota planejada', checked: false },
+      { id: '7', text: 'Meios de comunicação', checked: false },
+    ];
+  };
+
+  // Função para salvar checklist no localStorage
+  const saveChecklistToStorage = (items: ChecklistItem[]) => {
+    try {
+      localStorage.setItem('tripChecklist', JSON.stringify(items));
+    } catch (error) {
+      console.error('Erro ao salvar checklist:', error);
+    }
+  };
+
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>(loadChecklistFromStorage);
   const [newChecklistItem, setNewChecklistItem] = useState('');
+
+  // Carregar checklist do localStorage na inicialização
+  useEffect(() => {
+    const savedChecklist = loadChecklistFromStorage();
+    setChecklistItems(savedChecklist);
+  }, []);
 
   useEffect(() => {
     const driverExists = drivers.some(d => d.name === formData.driver);
@@ -394,13 +423,17 @@ export const TripForm: React.FC<TripFormProps> = ({
         text: newChecklistItem.trim(),
         checked: false
       };
-      setChecklistItems(prev => [...prev, newItem]);
+      const updatedItems = [...checklistItems, newItem];
+      setChecklistItems(updatedItems);
+      saveChecklistToStorage(updatedItems);
       setNewChecklistItem('');
     }
   };
 
   const removeChecklistItem = (id: string) => {
-    setChecklistItems(prev => prev.filter(item => item.id !== id));
+    const updatedItems = checklistItems.filter(item => item.id !== id);
+    setChecklistItems(updatedItems);
+    saveChecklistToStorage(updatedItems);
   };
 
   const markAllChecklist = () => {
@@ -435,8 +468,10 @@ export const TripForm: React.FC<TripFormProps> = ({
       destination: '',
       departureTime: getInitialDateTime(),
     }));
-    // Reset checklist
-    setChecklistItems(prev => prev.map(item => ({ ...item, checked: false })));
+    // Reset apenas o status checked do checklist, mantendo os itens
+    const resetChecklist = checklistItems.map(item => ({ ...item, checked: false }));
+    setChecklistItems(resetChecklist);
+    saveChecklistToStorage(resetChecklist);
   };
 
   return (
